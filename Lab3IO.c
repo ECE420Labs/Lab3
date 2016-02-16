@@ -15,12 +15,12 @@ int Lab3LoadInput(double ***A, int *size){
 
     -----
     Output:
-    Generated matrix will be passed back to the array *A, along with the matrix size in *size 
+    Generated matrix will be passed back to the array *A, along with the matrix size in *size
 
     -----
     Example:
     An integer array pointer and a integer should be defined before calling this function:
-    int **A; int size; 
+    int **A; int size;
     call this function as
     Lab3LoadInput(&A, &size);
 */
@@ -48,14 +48,14 @@ int Lab3LoadInput(double ***A, int *size){
 
 int Lab3SaveOutput(double* x, int size, double Time){
 /*
-    Save the data to the file for Lab 3 
+    Save the data to the file for Lab 3
 
     -----
     Input:
-    double* x     pointer to the result vector 
+    double* x     pointer to the result vector
     int size      the vector size
     double Time   calulation time
-    
+
     -----
     Output:
     data_output the stored data
@@ -80,7 +80,7 @@ int Lab3SaveOutput(double* x, int size, double Time){
     fclose(op);
     return 0;
 }
- 
+
 double** CreateMat(int NumRow, int NumCol){
     /* Allocate memory for an array
     -----
@@ -100,7 +100,7 @@ double** CreateMat(int NumRow, int NumCol){
     }
     return A;
 }
- 
+
 int DestroyMat(double** A, int NumRow){
     /* Free the memory
     -----
