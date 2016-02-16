@@ -13,10 +13,14 @@ Compiling:
 #include "timer.h"
 #include <omp.h>
 
-int **Au;  //pointer to the augmented matrix
+void Gauss_elim(void);
+void Jordan_elim();
+void solve();
+
+double **Au;  //pointer to the augmented matrix
 int size;
 double* X;
-int* index;
+int* ind;
 
 int main (int argc, char* argv[]) {
     double start, end;
@@ -29,28 +33,36 @@ int main (int argc, char* argv[]) {
     }
     thread_count_ = strtol(argv[1], NULL, 10);
 
-    Lab2_loadinput(&Au, &size);
+    Lab3LoadInput(&Au, &size);
 
     X = CreateVec(size);
-    index = malloc(size * sizeof(int));
+    ind = malloc(size * sizeof(int));
+    int i;
     for (i = 0; i < size; ++i)
-        index[i] = i;
+        ind[i] = i;
 
     GET_TIME(start);
     if (size == 1)
         X[0] = Au[0][1] / Au[0][0];
     else{
-        /*Gaussian elimination*/
         #pragma omp parallel num_threads(thread_count_)
+        {
+        /*Gaussian elimination*/
         Gauss_elim();
         Jordan_elim(); // serial
+        printf("%f ", Au[0][0]);printf("%f ", Au[0][1]);printf("%f\n", Au[0][2]);
+        printf("%f ", Au[1][0]);printf("%f ", Au[1][1]);printf("%f\n", Au[1][2]);
+        printf("%f ", Au[2][0]);printf("%f ", Au[2][1]);printf("%f\n", Au[2][2]);
         solve();
+        printf("%f ", X[0]);printf("%f ", X[1]);printf("%f\n", X[2]);
+        }
+
     }
     GET_TIME(end);
 
-    Lab2_saveoutput(Au, size, end-start);
+    Lab3SaveOutput(*Au, size, end-start);
 
-    DestroyMat(AU, size);
+    DestroyMat(Au, size);
     return 0;
 }
 
@@ -58,46 +70,56 @@ void Gauss_elim(void) {
     int my_rank = omp_get_thread_num();
     int thread_count = omp_get_num_threads();
 
-    for (k = my_rank*size/thread_count; k < (my_rank + 1)*size/thread_count; ++k){
+    int k;
+    int j;
+    int i;
+    double temp;
+    #pragma omp for
+    for (k = 0; k < size - 1; ++k){
         /*Pivoting*/
         temp = 0;
         for (i = k, j = 0; i < size; ++i) // Find row with largest kth element
-            if (temp < Au[index[i]][k] * Au[index[i]][k]){ // square value to make it positive
-                temp = Au[index[i]][k] * Au[index[i]][k];
-                j = i; // j is the row index with the largest element for column k
+            if (temp < Au[ind[i]][k] * Au[ind[i]][k]){ // square value to make it positive
+                temp = Au[ind[i]][k] * Au[ind[i]][k];
+                j = i; // j is the row ind with the largest element for column k
             }
         if (j != k)/*swap*/{
-            i = index[j];
-            index[j] = index[k];
-            index[k] = i;
+            i = ind[j];
+            ind[j] = ind[k];
+            ind[k] = i;
         }
         /*calculating*/
         #pragma omp critical
         for (i = k + 1; i < size; ++i){  // serialize for now
-            temp = Au[index[i]][k] / Au[index[k]][k];
-            for (j = k; j < size + 1; ++j)
-                Au[index[i]][j] -= Au[index[k]][j] * temp;
+            temp = Au[ind[i]][k] / Au[ind[k]][k];
+            for (j = k; j < size + 1; ++j) {
+                Au[ind[i]][j] -= Au[ind[k]][j] * temp;
+            }
         }
     }
 }
 
 void Jordan_elim() {
     /*Jordan elimination*/
+    int k;
+    int i;
+    double temp;
+
     #pragma omp critical
     for (k = size - 1; k > 0; --k){
         for (i = k - 1; i >= 0; --i ){
-            temp = Au[index[i]][k] / Au[index[k]][k];
-            Au[index[i]][k] -= temp * Au[index[k]][k];
-            Au[index[i]][size] -= temp * Au[index[k]][size]; // output vector
+            temp = Au[ind[i]][k] / Au[ind[k]][k];
+            Au[ind[i]][k] -= temp * Au[ind[k]][k];
+            Au[ind[i]][size] -= temp * Au[ind[k]][size]; // output vector
         }
     }
 }
 
 void solve() {
     /*solution*/
-    int my_rank = omp_get_thread_num();
-    int thread_count = omp_get_num_threads();
-
-    for (k = my_rank*size/thread_count; k < (my_rank + 1)*size/thread_count; ++k){
-        X[k] = Au[index[k]][size] / Au[index[k]][k];
+    int k;
+    #pragma omp for
+    for (k=0; k< size; ++k) {
+        X[k] = Au[ind[k]][size] / Au[ind[k]][k];
+    }
 }
