@@ -1,6 +1,5 @@
 /*
 Perform Gauss-Jordan elimanation on a square matrix
-
 -----
 Compiling:
     "Lab3IO.c" should be included and "-lm" tag is needed, like
@@ -45,10 +44,30 @@ int main (int argc, char* argv[]) {
     if (size == 1)
         X[0] = Au[0][1] / Au[0][0];
     else{
+        int k;
+        int j;
+        int i;
+        double temp;
+
+        for (k = 0; k < size - 1; ++k){
+            /*Pivoting*/
+            temp = 0;
+            j = 0;
+            for (i = k; i < size; ++i) {// Find row with largest kth element
+                if (temp < Au[ind[i]][k] * Au[ind[i]][k]){ // square value to make it positive
+                    temp = Au[ind[i]][k] * Au[ind[i]][k];
+                    j = i; // j is the row ind with the largest element for column k
+                }
+            }
+            if (j != k)/*swap*/{
+                i = ind[j];
+                ind[j] = ind[k];
+                ind[k] = i;
+            }
+        }
         #pragma omp parallel num_threads(thread_count_)
-        {
+{
         /*Gaussian elimination*/
-        #pragma omp single
         Gauss_elim(thread_count_);
         /*printf("%f ", Au[0][0]);printf("%f ", Au[0][1]);printf("%f\n", Au[0][2]);
         printf("%f ", Au[1][0]);printf("%f ", Au[1][1]);printf("%f\n", Au[1][2]);
@@ -75,20 +94,7 @@ void Gauss_elim(int nt) {
     double temp;
 
     for (k = 0; k < size - 1; ++k){
-        /*Pivoting*/
-        temp = 0;
-        j = 0;
-        for (i = k; i < size; ++i) {// Find row with largest kth element
-            if (temp < Au[ind[i]][k] * Au[ind[i]][k]){ // square value to make it positive
-                temp = Au[ind[i]][k] * Au[ind[i]][k];
-                j = i; // j is the row ind with the largest element for column k
-            }
-        }
-        if (j != k)/*swap*/{
-            i = ind[j];
-            ind[j] = ind[k];
-            ind[k] = i;
-        }
+
         /*calculating*/
         #pragma omp for private(j) private(temp)
         for (i = k + 1; i < size; ++i){
@@ -113,10 +119,7 @@ void Gauss_elim(int nt) {
     for (k=0; k< size; ++k) {
         X[k] = Au[ind[k]][size] / Au[ind[k]][k];
     }
-
 }
-
-
 
 void Jordan_elim() {
 
