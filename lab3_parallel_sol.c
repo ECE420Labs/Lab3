@@ -44,37 +44,15 @@ int main (int argc, char* argv[]) {
     if (size == 1)
         X[0] = Au[0][1] / Au[0][0];
     else{
-        int k;
-        int j;
-        int i;
-        double temp;
-
-        for (k = 0; k < size - 1; ++k){
-            /*Pivoting*/
-            temp = 0;
-            j = 0;
-            for (i = k; i < size; ++i) {// Find row with largest kth element
-                if (temp < Au[ind[i]][k] * Au[ind[i]][k]){ // square value to make it positive
-                    temp = Au[ind[i]][k] * Au[ind[i]][k];
-                    j = i; // j is the row ind with the largest element for column k
-                }
-            }
-            if (j != k)/*swap*/{
-                i = ind[j];
-                ind[j] = ind[k];
-                ind[k] = i;
-            }
-        }
-        #pragma omp parallel num_threads(thread_count_)
-{
+        {
         /*Gaussian elimination*/
         Gauss_elim(thread_count_);
         /*printf("%f ", Au[0][0]);printf("%f ", Au[0][1]);printf("%f\n", Au[0][2]);
         printf("%f ", Au[1][0]);printf("%f ", Au[1][1]);printf("%f\n", Au[1][2]);
         printf("%f ", Au[2][0]);printf("%f ", Au[2][1]);printf("%f\n", Au[2][2]);*/
-        //Jordan_elim(); // serial
+        Jordan_elim(); // serial
 
-        //solve(thread_count_);
+        solve(thread_count_);
         //printf("%f ", X[0]);printf("%f ", X[1]);printf("%f\n", X[2]);
         }
 
@@ -92,11 +70,23 @@ void Gauss_elim(int nt) {
     int j;
     int i;
     double temp;
-
     for (k = 0; k < size - 1; ++k){
-
+        /*Pivoting*/
+        temp = 0;
+        j = 0;
+        for (i = k; i < size; ++i) {// Find row with largest kth element
+            if (temp < Au[ind[i]][k] * Au[ind[i]][k]){ // square value to make it positive
+                temp = Au[ind[i]][k] * Au[ind[i]][k];
+                j = i; // j is the row ind with the largest element for column k
+            }
+        }
+        if (j != k)/*swap*/{
+            i = ind[j];
+            ind[j] = ind[k];
+            ind[k] = i;
+        }
         /*calculating*/
-        #pragma omp for private(j) private(temp)
+        #pragma omp parallel for num_threads(nt) private(j) private(temp)
         for (i = k + 1; i < size; ++i){
             temp = Au[ind[i]][k] / Au[ind[k]][k];
             for (j = k; j < size + 1; ++j) {
@@ -104,8 +94,14 @@ void Gauss_elim(int nt) {
             }
         }
     }
+}
 
+void Jordan_elim() {
     /*Jordan elimination*/
+    int k;
+    int i;
+    double temp;
+
     for (k = size - 1; k > 0; --k){
         for (i = k - 1; i >= 0; --i ){
             temp = Au[ind[i]][k] / Au[ind[k]][k];
@@ -113,19 +109,13 @@ void Gauss_elim(int nt) {
             Au[ind[i]][size] -= temp * Au[ind[k]][size]; // output vector
         }
     }
-
-    /*solution*/
-    #pragma omp for
-    for (k=0; k< size; ++k) {
-        X[k] = Au[ind[k]][size] / Au[ind[k]][k];
-    }
-}
-
-void Jordan_elim() {
-
 }
 
 void solve(int nt) {
-
-
+    /*solution*/
+    int k;
+    #pragma omp parallel for num_threads(nt)
+    for (k=0; k< size; ++k) {
+        X[k] = Au[ind[k]][size] / Au[ind[k]][k];
+    }
 }
