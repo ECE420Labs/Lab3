@@ -13,9 +13,9 @@ Compiling:
 #include "timer.h"
 #include <omp.h>
 
-void Gauss_elim(void);
+void Gauss_elim(int);
 void Jordan_elim();
-void solve();
+void solve(int);
 
 double **Au;  //pointer to the augmented matrix
 int size;
@@ -45,52 +45,50 @@ int main (int argc, char* argv[]) {
     if (size == 1)
         X[0] = Au[0][1] / Au[0][0];
     else{
-        #pragma omp parallel num_threads(thread_count_)
         {
         /*Gaussian elimination*/
-        Gauss_elim();
-        Jordan_elim(); // serial
-        printf("%f ", Au[0][0]);printf("%f ", Au[0][1]);printf("%f\n", Au[0][2]);
+        Gauss_elim(thread_count_);
+        /*printf("%f ", Au[0][0]);printf("%f ", Au[0][1]);printf("%f\n", Au[0][2]);
         printf("%f ", Au[1][0]);printf("%f ", Au[1][1]);printf("%f\n", Au[1][2]);
-        printf("%f ", Au[2][0]);printf("%f ", Au[2][1]);printf("%f\n", Au[2][2]);
-        solve();
-        printf("%f ", X[0]);printf("%f ", X[1]);printf("%f\n", X[2]);
+        printf("%f ", Au[2][0]);printf("%f ", Au[2][1]);printf("%f\n", Au[2][2]);*/
+        Jordan_elim(); // serial
+
+        solve(thread_count_);
+        //printf("%f ", X[0]);printf("%f ", X[1]);printf("%f\n", X[2]);
         }
 
     }
     GET_TIME(end);
 
-    Lab3SaveOutput(*Au, size, end-start);
+    Lab3SaveOutput(X, size, end-start);
 
     DestroyMat(Au, size);
     return 0;
 }
 
-void Gauss_elim(void) {
-    int my_rank = omp_get_thread_num();
-    int thread_count = omp_get_num_threads();
-
+void Gauss_elim(int nt) {
     int k;
     int j;
     int i;
     double temp;
-    #pragma omp for
     for (k = 0; k < size - 1; ++k){
         /*Pivoting*/
         temp = 0;
-        for (i = k, j = 0; i < size; ++i) // Find row with largest kth element
+        j = 0;
+        for (i = k; i < size; ++i) {// Find row with largest kth element
             if (temp < Au[ind[i]][k] * Au[ind[i]][k]){ // square value to make it positive
                 temp = Au[ind[i]][k] * Au[ind[i]][k];
                 j = i; // j is the row ind with the largest element for column k
             }
+        }
         if (j != k)/*swap*/{
             i = ind[j];
             ind[j] = ind[k];
             ind[k] = i;
         }
         /*calculating*/
-        #pragma omp critical
-        for (i = k + 1; i < size; ++i){  // serialize for now
+        #pragma omp for num_threads(nt) private(j) private(temp)
+        for (i = k + 1; i < size; ++i){
             temp = Au[ind[i]][k] / Au[ind[k]][k];
             for (j = k; j < size + 1; ++j) {
                 Au[ind[i]][j] -= Au[ind[k]][j] * temp;
@@ -105,7 +103,6 @@ void Jordan_elim() {
     int i;
     double temp;
 
-    #pragma omp critical
     for (k = size - 1; k > 0; --k){
         for (i = k - 1; i >= 0; --i ){
             temp = Au[ind[i]][k] / Au[ind[k]][k];
@@ -115,10 +112,10 @@ void Jordan_elim() {
     }
 }
 
-void solve() {
+void solve(int nt) {
     /*solution*/
     int k;
-    #pragma omp for
+    #pragma omp for num_threads(nt)
     for (k=0; k< size; ++k) {
         X[k] = Au[ind[k]][size] / Au[ind[k]][k];
     }

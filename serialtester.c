@@ -63,6 +63,9 @@ int main(int argc, char* argv[])
                     Au[index[i]][j] -= Au[index[k]][j] * temp;
             }
         }
+		/*printf("%f ", Au[0][0]);printf("%f ", Au[0][1]);printf("%f\n", Au[0][2]);
+		printf("%f ", Au[1][0]);printf("%f ", Au[1][1]);printf("%f\n", Au[1][2]);
+		printf("%f ", Au[2][0]);printf("%f ", Au[2][1]);printf("%f\n", Au[2][2]);*/
         /*Jordan elimination*/
         for (k = size - 1; k > 0; --k){
             for (i = k - 1; i >= 0; --i ){
@@ -75,7 +78,7 @@ int main(int argc, char* argv[])
         for (k=0; k< size; ++k)
             X[k] = Au[index[k]][size] / Au[index[k]][k];
     }
-
+//printf("%f ", X[0]);printf("%f ", X[1]);printf("%f\n", X[2]);
 	/*compare the solution*/
 	error = 0;
 	Xnorm = 0;
