@@ -44,17 +44,9 @@ int main (int argc, char* argv[]) {
     if (size == 1)
         X[0] = Au[0][1] / Au[0][0];
     else{
-        //#pragma omp parallel
         {
         /*Gaussian elimination*/
         Gauss_elim(thread_count_);
-        /*printf("%f ", Au[0][0]);printf("%f ", Au[0][1]);printf("%f\n", Au[0][2]);
-        printf("%f ", Au[1][0]);printf("%f ", Au[1][1]);printf("%f\n", Au[1][2]);
-        printf("%f ", Au[2][0]);printf("%f ", Au[2][1]);printf("%f\n", Au[2][2]);*/
-        //Jordan_elim(thread_count_); // serial
-
-        //solve(thread_count_);
-        //printf("%f ", X[0]);printf("%f ", X[1]);printf("%f\n", X[2]);
         }
 
     }
@@ -73,11 +65,13 @@ void Gauss_elim(int nt) {
     double temp=0;
     #pragma omp parallel num_threads(nt)
     {
-    #pragma omp single
+    //#pragma omp single
+    #pragma omp for ordered private(temp, i, j)
     for (k = 0; k < size - 1; ++k){
-        /*Pivoting*/
         temp = 0;
         j = 0;
+        #pragma omp ordered
+        /*Pivoting*/
         {
             for (i = k; i < size; ++i) {// Find row with largest kth element
                 if (temp < Au[ind[i]][k] * Au[ind[i]][k]){ // square value to make it positive
@@ -85,7 +79,6 @@ void Gauss_elim(int nt) {
                     j = i; // j is the row ind with the largest element for column k
                 }
             }
-
             if (j != k)/*swap*/{
                 i = ind[j];
                 ind[j] = ind[k];
@@ -93,7 +86,6 @@ void Gauss_elim(int nt) {
             }
         }
         /*calculating*/
-        //#pragma omp for private(j, temp)
         for (i = k + 1; i < size; ++i){
             temp = Au[ind[i]][k] / Au[ind[k]][k];
             for (j = k; j < size + 1; ++j) {
@@ -101,9 +93,9 @@ void Gauss_elim(int nt) {
             }
         }
     }
-    //#pragma omp for ordered private(temp, i)
-    #pragma omp single
+    #pragma omp for ordered private(temp, i)
     for (k = size - 1; k > 0; --k){
+        #pragma omp ordered
         for (i = k - 1; i >= 0; --i ){
             temp = Au[ind[i]][k] / Au[ind[k]][k];
             Au[ind[i]][k] -= temp * Au[ind[k]][k];
