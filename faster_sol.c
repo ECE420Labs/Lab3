@@ -86,7 +86,6 @@ void Gauss_elim(int nt) {
             }
         }
         /*calculating*/
-        //#pragma omp for private(j, temp)
         for (i = k + 1; i < size; ++i){
             temp = Au[ind[i]][k] / Au[ind[k]][k];
             for (j = k; j < size + 1; ++j) {
