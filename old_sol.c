@@ -86,7 +86,7 @@ void Gauss_elim(int nt) {
             ind[k] = i;
         }
         /*calculating*/
-        #pragma omp parallel for num_threads(nt) private(j, temp)
+        #pragma omp parallel for num_threads(nt) private(j, temp) schedule(static)
         for (i = k + 1; i < size; ++i){
             temp = Au[ind[i]][k] / Au[ind[k]][k];
             for (j = k; j < size + 1; ++j) {
@@ -103,7 +103,7 @@ void Jordan_elim(int nt) {
     double temp;
 
     for (k = size - 1; k > 0; --k){
-        #pragma omp parallel for num_threads(nt) private(temp)
+        #pragma omp parallel for num_threads(nt) private(temp) schedule(static)
         for (i = k - 1; i >= 0; --i ){
             temp = Au[ind[i]][k] / Au[ind[k]][k];
             Au[ind[i]][k] -= temp * Au[ind[k]][k];
@@ -115,7 +115,7 @@ void Jordan_elim(int nt) {
 void solve(int nt) {
     /*solution*/
     int k;
-    #pragma omp parallel for num_threads(nt)
+    #pragma omp parallel for num_threads(nt) schedule(static)
     for (k=0; k< size; ++k) {
         X[k] = Au[ind[k]][size] / Au[ind[k]][k];
     }

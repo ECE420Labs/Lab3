@@ -64,7 +64,7 @@ void Gauss_elim(int nt) {
     #pragma omp parallel num_threads(nt)
     {
         /* Gaussian elimination */
-        #pragma omp for ordered private(temp, i, j)
+        #pragma omp for ordered private(temp, i, j) schedule(static)
         for (k = 0; k < size - 1; ++k){
             temp = 0;
             j = 0;
@@ -92,7 +92,7 @@ void Gauss_elim(int nt) {
             }
         }
         /* Jordan elimination */
-        #pragma omp for ordered private(temp, i)
+        #pragma omp for ordered private(temp, i) schedule(static)
         for (k = size - 1; k > 0; --k){
             #pragma omp ordered
             for (i = k - 1; i >= 0; --i ){
@@ -102,7 +102,7 @@ void Gauss_elim(int nt) {
             }
         }
         /* Solve */
-        #pragma omp for
+        #pragma omp for schedule(static)
         for (k=0; k< size; ++k) {
             X[k] = Au[ind[k]][size] / Au[ind[k]][k];
         }
